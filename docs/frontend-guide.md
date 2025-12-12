@@ -11,7 +11,7 @@ npx -y create-vite frontend --template react-ts
 cd frontend
 
 # Установка зависимостей
-npm install @tanstack/react-query axios
+npm install @tanstack/react-router @tanstack/react-query axios
 npm install -D tailwindcss postcss autoprefixer
 
 # Настройка Tailwind
@@ -144,25 +144,73 @@ const handleParse = async () => {
 
 `src/App.tsx`:
 ```tsx
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { StrictMode } from 'react'
+import ReactDOM from 'react-dom/client'
+import {
+  Outlet,
+  RouterProvider,
+  createRouter,
+  createRoute,
+  createRootRoute,
+} from '@tanstack/react-router'
+import { TanStackRouterDevtools } from '@tanstack/router-devtools'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+// Pages (placeholders for guide)
+import Dashboard from './pages/Dashboard'
+import FunPayLots from './pages/FunPayLots'
+import Layout from './components/Layout' // Your main layout
+
+// 1. Create a root route
+const rootRoute = createRootRoute({
+  component: () => (
+    <Layout>
+      <Outlet />
+      <TanStackRouterDevtools />
+    </Layout>
+  ),
+})
+
+// 2. Define route tree
+const indexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/',
+  component: Dashboard,
+})
+
+const lotsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/lots',
+  component: FunPayLots,
+})
+
+const routeTree = rootRoute.addChildren([indexRoute, lotsRoute])
+
+// 3. Create the router
+const router = createRouter({ routeTree })
+
+// Register the router instance for type safety
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router
+  }
+}
+
+// 4. Render
+const queryClient = new QueryClient()
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/lots" element={<FunPayLots />} />
-          </Routes>
-        </Layout>
-      </BrowserRouter>
+      <RouterProvider router={router} />
     </QueryClientProvider>
-  );
+  )
 }
+
+export default App
 ```
 
-Также установить: `npm install react-router-dom`
+Также установить: `npm install @tanstack/router-devtools` (опционально)
 
 ---
 
